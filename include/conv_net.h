@@ -126,9 +126,9 @@ int CNNet<T, ET>::LoadFromFile(const std::string& filename)
 {
 	try
 	{
-		H5File file( filename, H5F_ACC_RDONLY );
+		H5::H5File file( filename, H5F_ACC_RDONLY );
 		
-		Group rootGroup = file.openGroup(ROOT_LAYERS_GROUP_NAME);
+		H5::Group rootGroup = file.openGroup(ROOT_LAYERS_GROUP_NAME);
 		double ver = hdf5Helper::ReadScalar<double>(rootGroup,"Version");
 		if(ver != __CNN_FILE_VERSION)
 			throw std::runtime_error("Unsupported version of CNN file");
@@ -147,7 +147,7 @@ int CNNet<T, ET>::LoadFromFile(const std::string& filename)
 		{
 			std::stringstream group_name;
 			group_name<<"Layer"<<i+1;
-			Group layerGroup = rootGroup.openGroup(group_name.str());
+			H5::Group layerGroup = rootGroup.openGroup(group_name.str());
 			Layer<T, ET>::eLayerType lt = (Layer<T, ET>::eLayerType)hdf5Helper::ReadIntAttribute(layerGroup, "LayerType");
 			switch(lt){
 				case Layer<T, ET>::ePLayer:
@@ -183,13 +183,16 @@ int CNNet<T, ET>::LoadFromFile(const std::string& filename)
 						hdf5Helper::ReadArray<int>(layerGroup, "ConnMap", conn_map);
 						switch(tf){
 							case eTansig_mod:
-                                layers_.push_back(LayerPtr(new CLayer<T,ET,TansigMod<ET> >(inp_width, inp_height, weights, biases, conn_map)));
+                                layers_.push_back(LayerPtr(new CLayer<T,ET,TansigMod<ET> >(inp_width, inp_height, is_trainable,
+									weights, biases, conn_map)));
 								break;
 							case eTansig:
-                                layers_.push_back(LayerPtr(new CLayer<T,ET,Tansig<ET> >(inp_width, inp_height, weights, biases, conn_map)));
+                                layers_.push_back(LayerPtr(new CLayer<T,ET,Tansig<ET> >(inp_width, inp_height, is_trainable,
+									weights, biases, conn_map)));
 								break;
 							case ePurelin:
-                                layers_.push_back(LayerPtr(new CLayer<T,ET,Purelin<ET> >(inp_width, inp_height, weights, biases, conn_map)));
+                                layers_.push_back(LayerPtr(new CLayer<T,ET,Purelin<ET> >(inp_width, inp_height, is_trainable,
+									weights, biases, conn_map)));
 								break;
 							default:
 								throw std::runtime_error("Unknown transfer function");
@@ -206,13 +209,13 @@ int CNNet<T, ET>::LoadFromFile(const std::string& filename)
 						hdf5Helper::ReadArray<ET>(layerGroup, "Biases", biases);
 						switch(tf){
 							case eTansig_mod:
-                                layers_.push_back(LayerPtr(new FLayer<T,ET,TansigMod<ET> >(weights, biases)));
+                                layers_.push_back(LayerPtr(new FLayer<T,ET,TansigMod<ET> >(weights, biases, is_trainable)));
 								break;
 							case eTansig:
-                                layers_.push_back(LayerPtr(new FLayer<T,ET,Tansig<ET> >(weights, biases)));
+                                layers_.push_back(LayerPtr(new FLayer<T,ET,Tansig<ET> >(weights, biases, is_trainable)));
 								break;
 							case ePurelin:
-                                layers_.push_back(LayerPtr(new FLayer<T,ET,Purelin<ET> >(weights, biases)));
+                                layers_.push_back(LayerPtr(new FLayer<T,ET,Purelin<ET> >(weights, biases, is_trainable)));
 								break;
 							default:
 								throw std::runtime_error("Unknown transfer function");
@@ -225,7 +228,7 @@ int CNNet<T, ET>::LoadFromFile(const std::string& filename)
 		}
 	}
 	// catch failure caused by the H5File operations
-	catch( FileIException error )
+	catch( H5::FileIException error )
 	{
 		std::cout<<"Unable to load CNN from file"<<std::endl;
 		error.printError();
@@ -233,7 +236,7 @@ int CNNet<T, ET>::LoadFromFile(const std::string& filename)
 	}
 
 	// catch failure caused by the DataSet operations
-	catch( DataSetIException error )
+	catch( H5::DataSetIException error )
 	{
 		std::cout<<"Unable to load CNN from file"<<std::endl;
 		error.printError();
@@ -241,7 +244,7 @@ int CNNet<T, ET>::LoadFromFile(const std::string& filename)
 	}
 
 	// catch failure caused by the DataSpace operations
-	catch( DataSpaceIException error )
+	catch( H5::DataSpaceIException error )
 	{
 		std::cout<<"Unable to load CNN from file"<<std::endl;
 		error.printError();
@@ -249,7 +252,7 @@ int CNNet<T, ET>::LoadFromFile(const std::string& filename)
 	}
 
 	// catch failure caused by the Attribute operations
-	catch( AttributeIException error )
+	catch( H5::AttributeIException error )
 	{
 		std::cout<<"Unable to load CNN from file"<<std::endl;
 		error.printError();
